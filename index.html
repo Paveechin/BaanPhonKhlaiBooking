@@ -509,16 +509,16 @@
   </div>
   <div class="note-box">
     📸 กรุณาส่งสลิปการโอนมาที่ LINE ของร้าน<br>
-    📞 083-845-4004 / 081-915-2092<br>
+    📞 081-915-2092<br>
     ⏰ เปิดทุกวัน 09:00 – 21:00 น.
   </div>
 </div>
 
 <script>
 // ===== CONFIG =====
-const LIFF_ID = "YOUR_LIFF_ID"; // ← ใส่ LIFF ID ของคุณ
-const SCRIPT_URL = "YOUR_APPS_SCRIPT_URL"; // ← ใส่ Apps Script URL
-const PROMPTPAY_NUMBER = "0838454004";
+const LIFF_ID = "2010143871-OIkPeMwi"; // ← ใส่ LIFF ID ของคุณ
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwo8CHyO_7XiIoxQO6QRnZ48mm7G1JoboABml9sJ8TPZseF4R4MjCcYt3TxnoW2Fu6L_A/exec"; // ← ใส่ Apps Script URL
+const PROMPTPAY_NUMBER = "0819152092";
 
 // ===== DATA =====
 const BRANCHES = {
@@ -724,6 +724,7 @@ async function confirmBooking() {
   try {
     await fetch(SCRIPT_URL, {
       method: 'POST',
+      mode: 'no-cors', 
       body: JSON.stringify(booking)
     });
   } catch(e) { console.log("Save error:", e); }
