@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>จองนวด | Booking</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --brown: #947547;
+  --brown-light: #c4a97a;
+  --brown-pale: #f0e8d8;
+  --cream: #faf6f1;
+  --green-dark: #413f2d;
+  --green-mid: #6b6b4a;
+  --sand: #e4e0d6;
+  --white: #ffffff;
+  --text: #2c2c2c;
+  --text-light: #888880;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 2px 16px rgba(0,0,0,0.07);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'Sarabun', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+
+/* LOADING */
+#loading { position:fixed; inset:0; background:var(--cream); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:999; }
+.loader { width:36px; height:36px; border:3px solid var(--sand); border-top-color:var(--brown); border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:14px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* HEADER */
+.header { text-align:center; padding:32px 20px 24px; background:var(--white); border-bottom:1px solid var(--sand); }
+.logo-svg { margin-bottom:12px; }
+.brand-name { font-size:22px; font-weight:700; letter-spacing:0.5px; color:var(--text); }
+.brand-tagline { font-size:12px; color:var(--text-light); letter-spacing:2px; text-transform:uppercase; margin-top:4px; }
+.user-bar { display:flex; align-items:center; gap:8px; justify-content:center; margin-top:12px; padding-top:12px; border-top:1px solid var(--sand); }
+.user-avatar { width:28px; height:28px; border-radius:50%; object-fit:cover; }
+.user-name { font-size:13px; color:var(--text-light); }
+
+/* BRANCH HEADER */
+.branch-header { padding:20px; text-align:center; }
+.branch-header.baan { background:linear-gradient(135deg, #947547 0%, #c4a97a 100%); }
+.branch-header.bodhi { background:linear-gradient(135deg, #413f2d 0%, #6b6b4a 100%); }
+.branch-header-logo { margin-bottom:8px; }
+.branch-header-name { font-size:20px; font-weight:700; color:var(--white); }
+.branch-header-sub { font-size:12px; color:rgba(255,255,255,0.75); letter-spacing:1.5px; text-transform:uppercase; margin-top:3px; }
+
+/* STEPS */
+.step { display:none; animation:fadeIn 0.25s ease; }
+.step.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* STEP INDICATOR */
+.step-bar { display:flex; align-items:center; justify-content:center; gap:0; padding:16px 20px 8px; background:var(--white); border-bottom:1px solid var(--sand); }
+.step-node { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.step-circle { width:28px; height:28px; border-radius:50%; border:2px solid var(--sand); background:var(--white); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--text-light); transition:all 0.3s; }
+.step-circle.done { background:var(--accent,var(--brown)); border-color:var(--accent,var(--brown)); color:var(--white); }
+.step-circle.active { border-color:var(--accent,var(--brown)); color:var(--accent,var(--brown)); font-weight:700; }
+.step-label { font-size:10px; color:var(--text-light); white-space:nowrap; }
+.step-label.active { color:var(--accent,var(--brown)); font-weight:600; }
+.step-line { width:32px; height:2px; background:var(--sand); margin-bottom:14px; transition:background 0.3s; }
+.step-line.done { background:var(--accent,var(--brown)); }
+
+/* CONTENT */
+.content { padding:16px; max-width:480px; margin:0 auto; }
+
+/* CARD */
+.card { background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px; margin-bottom:12px; }
+.card-title { font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-light); margin-bottom:14px; }
+.section-title { font-size:18px; font-weight:700; color:var(--text); margin:16px 0 4px; }
+.section-sub { font-size:13px; color:var(--text-light); margin-bottom:14px; line-height:1.5; }
+
+/* BRANCH SELECT */
+.branch-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px; }
+.branch-card { border-radius:var(--radius); overflow:hidden; cursor:pointer; border:2px solid transparent; transition:all 0.2s; box-shadow:var(--shadow); }
+.branch-card:hover { transform:translateY(-2px); box-shadow:0 6px 24px rgba(0,0,0,0.12); }
+.branch-card.selected { border-color:var(--brown); }
+.branch-card-img { width:100%; height:110px; object-fit:cover; display:block; }
+.branch-card-body { padding:12px; background:var(--white); }
+.branch-card-name { font-size:14px; font-weight:700; color:var(--text); }
+.branch-card-loc { font-size:11px; color:var(--text-light); margin-top:3px; line-height:1.4; }
+.branch-badge { display:inline-block; font-size:10px; font-weight:600; padding:2px 8px; border-radius:10px; margin-top:6px; }
+.branch-badge.baan { background:#f5edd5; color:var(--brown); }
+.branch-badge.bodhi { background:#e8e8d8; color:var(--green-dark); }
+
+/* GUESTS */
+.guest-select { display:flex; gap:10px; }
+.guest-btn { flex:1; padding:14px; border-radius:var(--radius-sm); border:2px solid var(--sand); background:var(--white); font-size:16px; font-family:'Sarabun',sans-serif; font-weight:600; cursor:pointer; text-align:center; transition:all 0.2s; color:var(--text); }
+.guest-btn.selected { border-color:var(--accent,var(--brown)); background:var(--accent-pale,#fdf8ee); color:var(--accent,var(--brown)); }
+
+/* PERSON BLOCK */
+.person-block { border:1.5px solid var(--sand); border-radius:var(--radius-sm); padding:14px; margin-bottom:10px; }
+.person-label { font-size:12px; font-weight:700; color:var(--text-light); letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; }
+.cat-tabs { display:flex; gap:6px; margin-bottom:10px; overflow-x:auto; padding-bottom:2px; }
+.cat-tab { flex-shrink:0; padding:6px 12px; border-radius:20px; border:1.5px solid var(--sand); font-size:12px; font-weight:500; cursor:pointer; background:var(--white); color:var(--text-light); transition:all 0.2s; font-family:'Sarabun',sans-serif; }
+.cat-tab.active { background:var(--accent,var(--brown)); border-color:var(--accent,var(--brown)); color:var(--white); }
+
+.service-item { border:1.5px solid var(--sand); border-radius:var(--radius-sm); padding:11px 12px; margin-bottom:8px; cursor:pointer; transition:all 0.15s; background:var(--white); }
+.service-item.selected { border-color:var(--accent,var(--brown)); background:var(--accent-pale,#fdf8ee); }
+.service-name { font-weight:600; font-size:13px; color:var(--text); }
+.service-name-en { font-size:11px; color:var(--text-light); margin-top:1px; }
+.price-chips { display:flex; gap:5px; flex-wrap:wrap; margin-top:7px; }
+.price-chip { padding:4px 9px; border-radius:20px; border:1px solid var(--sand); font-size:11px; cursor:pointer; background:var(--cream); color:var(--text); transition:all 0.15s; font-family:'Sarabun',sans-serif; line-height:1.5; text-align:center; }
+.price-chip:hover,.price-chip.selected { background:var(--accent,var(--brown)); border-color:var(--accent,var(--brown)); color:var(--white); font-weight:600; }
+
+/* DATE TIME */
+.date-input { width:100%; padding:13px 14px; border:1.5px solid var(--sand); border-radius:var(--radius-sm); font-size:15px; font-family:'Sarabun',sans-serif; background:var(--white); color:var(--text); outline:none; transition:border 0.2s; }
+.date-input:focus { border-color:var(--accent,var(--brown)); }
+.time-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
+.time-btn { padding:10px 4px; border-radius:var(--radius-sm); border:1.5px solid var(--sand); font-size:12px; font-family:'Sarabun',sans-serif; text-align:center; cursor:pointer; background:var(--white); color:var(--text); transition:all 0.15s; line-height:1.3; }
+.time-btn:hover,.time-btn.selected { background:var(--accent,var(--brown)); border-color:var(--accent,var(--brown)); color:var(--white); font-weight:600; }
+.time-btn:disabled { opacity:0.3; cursor:not-allowed; background:var(--sand); }
+.time-btn.full { opacity:0.4; cursor:not-allowed; background:var(--sand); border-color:var(--sand); color:var(--text-light); font-size:10px; }
+.time-available { font-size:10px; color:#4caf50; }
+
+/* AVAILABILITY LEGEND */
+.legend { display:flex; gap:12px; margin-top:10px; flex-wrap:wrap; }
+.legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-light); }
+.legend-dot { width:10px; height:10px; border-radius:2px; }
+
+/* SUMMARY */
+.summary-row { display:flex; justify-content:space-between; align-items:flex-start; padding:9px 0; border-bottom:1px solid var(--sand); font-size:13px; }
+.summary-row:last-child { border-bottom:none; padding-bottom:0; }
+.summary-label { color:var(--text-light); flex-shrink:0; margin-right:12px; }
+.summary-value { font-weight:600; text-align:right; font-size:13px; }
+.summary-total { font-size:20px; font-weight:700; color:var(--accent,var(--brown)); }
+.policy-box { background:var(--cream); border-radius:var(--radius-sm); padding:12px 14px; font-size:12px; color:var(--text-light); line-height:1.7; margin-top:10px; border-left:3px solid var(--accent,var(--brown)); }
+
+/* SUCCESS */
+.success-box { text-align:center; padding:24px 16px 16px; }
+.success-icon { font-size:48px; margin-bottom:10px; }
+.success-title { font-size:20px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.success-sub { font-size:13px; color:var(--text-light); line-height:1.6; }
+.payment-info { text-align:center; padding:16px; }
+.payment-note { font-size:13px; color:var(--text-light); line-height:1.7; }
+.pay-amount { font-size:28px; font-weight:700; color:var(--accent,var(--brown)); margin:10px 0; }
+
+/* BUTTONS */
+.btn { width:100%; padding:15px; border-radius:var(--radius); border:none; font-size:15px; font-weight:700; font-family:'Sarabun',sans-serif; cursor:pointer; transition:all 0.2s; margin-top:8px; letter-spacing:0.3px; }
+.btn-primary { background:var(--accent,var(--brown)); color:var(--white); }
+.btn-primary:hover { opacity:0.9; }
+.btn-primary:disabled { opacity:0.4; cursor:not-allowed; }
+.btn-back { background:none; border:none; font-family:'Sarabun',sans-serif; font-size:13px; color:var(--text-light); cursor:pointer; padding:10px 0; display:flex; align-items:center; gap:4px; }
+
+/* BODY THEMES */
+body.branch-baan { --accent:#947547; --accent-pale:#fdf8ee; --accent-dark:#6b5230; }
+body.branch-bodhi { --accent:#413f2d; --accent-pale:#f0efe8; --accent-dark:#2a2a1e; }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loader"></div>
+  <p style="color:var(--text-light);font-size:13px;">กำลังโหลด...</p>
+</div>
+
+<!-- DEFAULT HEADER (step1) -->
+<div id="defaultHeader" class="header">
+  <div class="logo-svg">
+    <svg width="48" height="40" viewBox="0 0 48 40" fill="none">
+      <path d="M24 4 C18 4 12 10 12 18 C12 28 24 36 24 36 C24 36 36 28 36 18 C36 10 30 4 24 4Z" fill="#947547" opacity="0.15"/>
+      <path d="M20 6 C16 8 14 14 16 20 C18 26 24 32 24 32" stroke="#947547" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <path d="M28 6 C32 8 34 14 32 20 C30 26 24 32 24 32" stroke="#413f2d" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <path d="M24 10 C24 10 22 16 20 20" stroke="#947547" stroke-width="1" fill="none" stroke-linecap="round"/>
+      <path d="M24 10 C24 10 26 16 28 20" stroke="#413f2d" stroke-width="1" fill="none" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="brand-name">จองนวด</div>
+  <div class="brand-tagline">Health Massage Booking</div>
+  <div id="userBar" class="user-bar" style="display:none;">
+    <img id="userAvatar" class="user-avatar" src="" alt="">
+    <span class="user-name" id="userName"></span>
+  </div>
+</div>
+
+<!-- BRANCH HEADER (step2+) -->
+<div id="branchHeader" style="display:none;">
+  <div id="branchHeaderInner" class="branch-header">
+    <div class="branch-header-logo" id="branchSVG"></div>
+    <div class="branch-header-name" id="branchHeaderName"></div>
+    <div class="branch-header-sub" id="branchHeaderSub"></div>
+  </div>
+</div>
+
+<!-- STEP BAR -->
+<div id="stepBar" style="display:none;">
+  <div class="step-bar">
+    <div class="step-node"><div class="step-circle active" id="sc1">1</div><div class="step-label active" id="sl1">ประเภทนวด</div></div>
+    <div class="step-line" id="sline1"></div>
+    <div class="step-node"><div class="step-circle" id="sc2">2</div><div class="step-label" id="sl2">จำนวน</div></div>
+    <div class="step-line" id="sline2"></div>
+    <div class="step-node"><div class="step-circle" id="sc3">3</div><div class="step-label" id="sl3">วันเวลา</div></div>
+    <div class="step-line" id="sline3"></div>
+    <div class="step-node"><div class="step-circle" id="sc4">4</div><div class="step-label" id="sl4">ยืนยัน</div></div>
+  </div>
+</div>
+
+<!-- ======= STEP 1: เลือกสาขา ======= -->
+<div class="step active" id="step1">
+  <div class="content">
+    <div class="section-title">เลือกสาขา</div>
+    <div class="section-sub">กรุณาเลือกสาขาที่ต้องการจอง</div>
+    <div class="branch-grid">
+      <div class="branch-card" onclick="selectBranch('baan')">
+        <div style="height:110px;background:linear-gradient(135deg,#f5edd5,#e8d5a0);display:flex;align-items:center;justify-content:center;">
+          <svg width="60" height="50" viewBox="0 0 60 50"><path d="M30 5 C22 5 14 13 14 23 C14 35 30 45 30 45 C30 45 46 35 46 23 C46 13 38 5 30 5Z" fill="#947547" opacity="0.2"/><path d="M26 8 C20 11 17 18 20 26 C23 33 30 40 30 40" stroke="#947547" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M34 8 C40 11 43 18 40 26 C37 33 30 40 30 40" stroke="#947547" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M30 13 C30 13 27 20 25 25" stroke="#c4a97a" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M30 13 C30 13 33 20 35 25" stroke="#c4a97a" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <div class="branch-card-body">
+          <div class="branch-card-name">บ้านผ่อนคลาย</div>
+          <div class="branch-card-loc">ซอยรามคำแหง 118 แยก 12<br>ใกล้ Amazon</div>
+          <span class="branch-badge baan">1 นักนวด</span>
+        </div>
+      </div>
+      <div class="branch-card" onclick="selectBranch('bodhi')">
+        <div style="height:110px;background:linear-gradient(135deg,#e8e8d8,#d4d4b8);display:flex;align-items:center;justify-content:center;">
+          <svg width="60" height="50" viewBox="0 0 60 50"><ellipse cx="30" cy="22" rx="18" ry="14" fill="#413f2d" opacity="0.12"/><path d="M30 8 Q40 15 38 26 Q35 36 30 42 Q25 36 22 26 Q20 15 30 8Z" stroke="#413f2d" stroke-width="1.8" fill="none"/><path d="M30 8 L30 42" stroke="#6b6b4a" stroke-width="1" stroke-dasharray="3,3"/><path d="M22 18 Q26 16 30 18" stroke="#413f2d" stroke-width="1.2" fill="none"/><path d="M22 24 Q26 22 30 24" stroke="#413f2d" stroke-width="1.2" fill="none"/><path d="M38 18 Q34 16 30 18" stroke="#413f2d" stroke-width="1.2" fill="none"/><path d="M38 24 Q34 22 30 24" stroke="#413f2d" stroke-width="1.2" fill="none"/></svg>
+        </div>
+        <div class="branch-card-body">
+          <div class="branch-card-name">โพธิ์บัลลังก์</div>
+          <div class="branch-card-loc">หน้าซอย<br>รามคำแหง 118</div>
+          <span class="branch-badge bodhi">2 นักนวด</span>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px;padding:14px;background:var(--white);border-radius:var(--radius);border:1px solid var(--sand);font-size:12px;color:var(--text-light);line-height:1.7;">
+      🕘 เปิดทุกวัน 09:00 – 21:00 น.<br>
+      📞 083-845-4004 / 081-915-2092<br>
+      💳 ชำระเงินหน้างาน ไม่มีมัดจำ
+    </div>
+  </div>
+</div>
+
+<!-- ======= STEP 2: เลือกนวด ======= -->
+<div class="step" id="step2">
+  <div class="content">
+    <button class="btn-back" onclick="backToStep1()">← เปลี่ยนสาขา</button>
+
+    <!-- จำนวนคน -->
+    <div class="card">
+      <div class="card-title">👥 จำนวนผู้เข้ารับบริการ</div>
+      <div class="guest-select">
+        <button class="guest-btn selected" id="guest1btn" onclick="setGuests(1)">1 คน</button>
+        <button class="guest-btn" id="guest2btn" onclick="setGuests(2)">2 คน</button>
+      </div>
+    </div>
+
+    <!-- คนที่ 1 -->
+    <div class="card" id="person1card">
+      <div class="person-label">👤 คนที่ 1</div>
+      <div class="cat-tabs" id="cat1tabs">
+        <button class="cat-tab active" onclick="switchCat(1,'thai',this)">นวดแผนไทย</button>
+        <button class="cat-tab" onclick="switchCat(1,'oil',this)">นวดน้ำมัน & ขัดผิว</button>
+      </div>
+      <div id="serviceList1"></div>
+    </div>
+
+    <!-- คนที่ 2 -->
+    <div class="card" id="person2card" style="display:none;">
+      <div class="person-label">👤 คนที่ 2</div>
+      <div class="cat-tabs" id="cat2tabs">
+        <button class="cat-tab active" onclick="switchCat(2,'thai',this)">นวดแผนไทย</button>
+        <button class="cat-tab" onclick="switchCat(2,'oil',this)">นวดน้ำมัน & ขัดผิว</button>
+      </div>
+      <div id="serviceList2"></div>
+    </div>
+
+    <button class="btn btn-primary" id="btnStep2" onclick="goStep(3)" disabled>ถัดไป →</button>
+  </div>
+</div>
+
+<!-- ======= STEP 3: วันเวลา ======= -->
+<div class="step" id="step3">
+  <div class="content">
+    <button class="btn-back" onclick="goStep(2)">← กลับ</button>
+    <div class="card">
+      <div class="card-title">📅 เลือกวันที่</div>
+      <input type="date" class="date-input" id="bookDate" onchange="loadAvailability()">
+    </div>
+    <div class="card">
+      <div class="card-title">🕐 เลือกเวลาเริ่ม</div>
+      <div id="loadingSlots" style="text-align:center;padding:20px;color:var(--text-light);font-size:13px;display:none;">กำลังตรวจสอบเวลาว่าง...</div>
+      <div class="time-grid" id="timeGrid"></div>
+      <div class="legend" style="margin-top:12px;">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--accent,var(--brown));"></div>ว่าง</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--sand);"></div>เต็ม / ผ่านแล้ว</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="btnStep3" onclick="goStep(4)" disabled>ถัดไป →</button>
+  </div>
+</div>
+
+<!-- ======= STEP 4: สรุป ======= -->
+<div class="step" id="step4">
+  <div class="content">
+    <button class="btn-back" onclick="goStep(3)">← กลับ</button>
+    <div class="section-title">สรุปการจอง</div>
+    <div class="section-sub">กรุณาตรวจสอบข้อมูลก่อนยืนยัน</div>
+    <div class="card" id="summaryCard"></div>
+    <div class="policy-box">
+      🙏 <strong>นโยบายการยกเลิก</strong><br>
+      หากต้องการยกเลิกหรือเลื่อนนัด กรุณาแจ้งล่วงหน้าอย่างน้อย <strong>30 นาที</strong> ก่อนถึงเวลานัด เพื่อให้เราสามารถบริหารคิวและให้บริการลูกค้าท่านอื่นได้อย่างมีประสิทธิภาพ ขอบคุณสำหรับความเข้าใจครับ/ค่ะ 🌿
+    </div>
+    <div style="margin-top:10px;padding:12px 14px;background:var(--cream);border-radius:var(--radius-sm);font-size:12px;color:var(--text-light);">
+      💳 <strong>ชำระเงินหน้างานเท่านั้น</strong> ไม่มีการเก็บมัดจำ
+    </div>
+    <button class="btn btn-primary" id="btnConfirm" onclick="confirmBooking()">✅ ยืนยันการจอง</button>
+  </div>
+</div>
+
+<!-- ======= STEP 5: สำเร็จ ======= -->
+<div class="step" id="step5">
+  <div class="content">
+    <div class="card">
+      <div class="success-box">
+        <div class="success-icon">🎉</div>
+        <div class="success-title">จองสำเร็จแล้ว!</div>
+        <p class="success-sub">ขอบคุณที่ไว้วางใจเราครับ/ค่ะ<br>ทีมงานรอต้อนรับคุณอยู่นะครับ 🌿</p>
+      </div>
+    </div>
+    <div class="card" id="confirmCard"></div>
+    <div class="card" style="font-size:13px;color:var(--text-light);line-height:1.8;">
+      💳 <strong>ชำระเงินหน้างาน</strong> ไม่มีมัดจำ<br>
+      ⏰ หากต้องการยกเลิก กรุณาแจ้ง <strong>ล่วงหน้า 30 นาที</strong><br>
+      📞 083-845-4004 / 081-915-2092<br>
+      🕘 เปิดทุกวัน 09:00 – 21:00 น.
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== CONFIG =====
+var LIFF_ID = "2010143871-OIkPeMwi";
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwm-ahPF8pdWtEI4czO77XRwSDChaURahgc6if0PDuj2ot_415s5ncHtVwbPFtRAiy4HA/exec"; // ← ใส่ URL จาก Apps Script
+
+// ===== BRANCH CONFIG =====
+var BRANCHES = {
+  baan: { name:"บ้านผ่อนคลาย", nameFull:"บ้านผ่อนคลาย @ราม118", sub:"นวดเพื่อสุขภาพ", maxTherapist:1 },
+  bodhi: { name:"โพธิ์บัลลังก์", nameFull:"โพธิ์บัลลังก์", sub:"นวดเพื่อสุขภาพ", maxTherapist:2 }
+};
+
+// ===== SERVICES =====
+var SERVICES = {
+  thai:[
+    {id:"t1",name:"นวดแผนไทย",en:"Thai massage",prices:{60:300,90:450,120:600,180:900}},
+    {id:"t2",name:"นวดฝ่าเท้าและขา",en:"Foot & leg massage",prices:{60:300,90:450,120:600,180:900}},
+    {id:"t3",name:"นวดไทยประคบ",en:"Thai compress massage",prices:{60:450,90:600,120:800,180:1200}},
+    {id:"t4",name:"นวดไทยออยล์ + ยาหม่อง + รีดเส้น",en:"Thai oil + Balm + Deep tissue",prices:{60:400,90:500,120:600,180:900}},
+    {id:"t5",name:"นวดศีรษะ คอ บ่า ไหล่ และแขน",en:"Head, neck, shoulder & arm",prices:{60:350,90:500,120:600,180:900}},
+    {id:"t6",name:"แช่เท้าเกลือหิมาลายัน + สครับ + นวดเท้า",en:"Himalayan salt + scrub + foot",prices:{60:390,90:550,120:700,180:1000}},
+    {id:"t7",name:"นวดฝ่าเท้า + นวดศีรษะ คอ บ่า ไหล่",en:"Foot + head, neck & shoulder",prices:{60:450}},
+    {id:"t8",name:"นวดน้ำมันไร้กลิ่น (ออยล์)",en:"Oil massage (odorless)",prices:{60:400,90:600,120:700,180:1100}},
+    {id:"t9",name:"น้ำมันไพลพรีเมี่ยม",en:"Premium Plai oil massage",prices:{60:500,90:700,120:900,180:1300}}
+  ],
+  oil:[
+    {id:"o1",name:"นวดอโรม่า",en:"Aroma massage",prices:{60:500,120:900,180:1300}},
+    {id:"o2",name:"นวดน้ำมันมะพร้าว 100%",en:"Coconut oil massage 100%",prices:{60:500,120:900,180:1300}},
+    {id:"o3",name:"นวดน้ำมันร้อนผ่อนคลาย",en:"Hot oil relaxation massage",prices:{60:600,120:1100,180:1600}},
+    {id:"o4",name:"สครับผิวน้ำนม + นวดน้ำมันไร้กลิ่น",en:"Milk scrub + oil massage",prices:{60:600,120:1100,180:1600}},
+    {id:"o5",name:"สครับผิวน้ำนม + นวดอโรม่า",en:"Milk scrub + Aroma massage",prices:{60:700,120:1300,180:1900}},
+    {id:"o6",name:"ระเบิดขี้ไคล + สครับผิว",en:"Brighten up + body scrub",prices:{60:600,120:1100,180:1600}},
+    {id:"o7",name:"สปาระเบิดขี้ไคล + สครับ + นวดอโรม่า",en:"Brighten up + scrub + Aroma",prices:{120:1300,180:1900}},
+    {id:"o8",name:"สปาระเบิดขี้ไคล + สครับคอลลาเจนทองคำ + นวดอโรม่าทองคำ",en:"Gold collagen scrub + Gold aroma",prices:{120:1500,180:2000}}
+  ]
+};
+
+var TIME_SLOTS = ["09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30"];
+
+// ===== STATE =====
+var state = {
+  branch: null,
+  guests: 1,
+  persons: [
+    { service:null, duration:null, price:null, category:'thai' },
+    { service:null, duration:null, price:null, category:'thai' }
+  ],
+  date: null,
+  time: null,
+  userId: null,
+  displayName: null,
+  pictureUrl: null,
+  bookedSlots: {}
+};
+
+// ===== INIT =====
+window.addEventListener('DOMContentLoaded', async function() {
+  var today = new Date().toISOString().split('T')[0];
+  document.getElementById('bookDate').min = today;
+  document.getElementById('bookDate').value = today;
+  renderServices(1, 'thai');
+  renderServices(2, 'thai');
+
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+    var profile = await liff.getProfile();
+    state.userId = profile.userId;
+    state.displayName = profile.displayName;
+    state.pictureUrl = profile.pictureUrl;
+    document.getElementById('userAvatar').src = profile.pictureUrl || '';
+    document.getElementById('userName').textContent = 'สวัสดี ' + profile.displayName;
+    document.getElementById('userBar').style.display = 'flex';
+  } catch(e) {
+    console.log('LIFF:', e);
+    state.displayName = 'ผู้ใช้';
+    state.userId = 'test_' + Date.now();
+  }
+  document.getElementById('loading').style.display = 'none';
+});
+
+// ===== BRANCH =====
+function selectBranch(branch) {
+  state.branch = branch;
+  document.body.className = 'branch-' + branch;
+  var b = BRANCHES[branch];
+
+  var svgBaan = '<svg width="44" height="36" viewBox="0 0 44 36"><path d="M22 4 C16 4 10 10 10 17 C10 26 22 33 22 33 C22 33 34 26 34 17 C34 10 28 4 22 4Z" fill="rgba(255,255,255,0.2)"/><path d="M19 6 C14 9 12 15 14 21 C16 26 22 31 22 31" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M25 6 C30 9 32 15 30 21 C28 26 22 31 22 31" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>';
+  var svgBodhi = '<svg width="44" height="36" viewBox="0 0 44 36"><path d="M22 4 Q32 11 30 21 Q28 30 22 34 Q16 30 14 21 Q12 11 22 4Z" stroke="white" stroke-width="1.8" fill="rgba(255,255,255,0.15)"/><path d="M22 4 L22 34" stroke="rgba(255,255,255,0.4)" stroke-width="1" stroke-dasharray="3,3"/><path d="M15 16 Q19 14 22 16" stroke="rgba(255,255,255,0.7)" stroke-width="1.2" fill="none"/><path d="M29 16 Q25 14 22 16" stroke="rgba(255,255,255,0.7)" stroke-width="1.2" fill="none"/></svg>';
+
+  document.getElementById('branchSVG').innerHTML = branch === 'baan' ? svgBaan : svgBodhi;
+  document.getElementById('branchHeaderInner').className = 'branch-header ' + branch;
+  document.getElementById('branchHeaderName').textContent = b.nameFull;
+  document.getElementById('branchHeaderSub').textContent = b.sub;
+  document.getElementById('defaultHeader').style.display = 'none';
+  document.getElementById('branchHeader').style.display = 'block';
+  document.getElementById('stepBar').style.display = 'block';
+
+  // guest limit
+  if (branch === 'baan') {
+    document.getElementById('guest2btn').disabled = false;
+  }
+
+  goStep(2);
+}
+
+function backToStep1() {
+  state.branch = null;
+  document.body.className = '';
+  document.getElementById('defaultHeader').style.display = 'block';
+  document.getElementById('branchHeader').style.display = 'none';
+  document.getElementById('stepBar').style.display = 'none';
+  showStep('step1');
+}
+
+// ===== GUESTS =====
+function setGuests(n) {
+  state.guests = n;
+  document.getElementById('guest1btn').classList.toggle('selected', n===1);
+  document.getElementById('guest2btn').classList.toggle('selected', n===2);
+  document.getElementById('person2card').style.display = n===2 ? 'block' : 'none';
+  checkStep2();
+}
+
+// ===== SERVICES =====
+function renderServices(person, cat) {
+  var list = document.getElementById('serviceList' + person);
+  list.innerHTML = '';
+  SERVICES[cat].forEach(function(svc) {
+    var isSelected = state.persons[person-1].service && state.persons[person-1].service.id === svc.id;
+    var div = document.createElement('div');
+    div.className = 'service-item' + (isSelected ? ' selected' : '');
+    div.id = 'svc' + person + '-' + svc.id;
+    var chips = Object.entries(svc.prices).map(function(kv) {
+      var min = kv[0]; var price = kv[1];
+      var sel = isSelected && state.persons[person-1].duration == min;
+      return '<span class="price-chip' + (sel?' selected':'') + '" onclick="selectPrice(event,' + person + ',\'' + svc.id + '\',' + min + ',' + price + ',\'' + cat + '\')">' + min + ' น.<br><b>' + price.toLocaleString() + '฿</b></span>';
+    }).join('');
+    div.innerHTML = '<div class="service-name">' + svc.name + '</div><div class="service-name-en">' + svc.en + '</div><div class="price-chips">' + chips + '</div>';
+    list.appendChild(div);
+  });
+}
+
+function switchCat(person, cat, el) {
+  state.persons[person-1].category = cat;
+  state.persons[person-1].service = null;
+  state.persons[person-1].duration = null;
+  state.persons[person-1].price = null;
+  var tabs = document.querySelectorAll('#cat' + person + 'tabs .cat-tab');
+  tabs.forEach(function(t){ t.classList.remove('active'); });
+  el.classList.add('active');
+  renderServices(person, cat);
+  checkStep2();
+}
+
+function selectPrice(e, person, svcId, duration, price, cat) {
+  e.stopPropagation();
+  var p = state.persons[person-1];
+  p.service = SERVICES[cat].find(function(s){ return s.id === svcId; });
+  p.duration = duration;
+  p.price = price;
+  document.querySelectorAll('#serviceList' + person + ' .service-item').forEach(function(el){ el.classList.remove('selected'); });
+  document.querySelectorAll('#serviceList' + person + ' .price-chip').forEach(function(el){ el.classList.remove('selected'); });
+  var svcEl = document.getElementById('svc' + person + '-' + svcId);
+  if (svcEl) svcEl.classList.add('selected');
+  e.target.classList.add('selected');
+  checkStep2();
+}
+
+function checkStep2() {
+  var ok = state.persons[0].service !== null;
+  if (state.guests === 2) ok = ok && state.persons[1].service !== null;
+  document.getElementById('btnStep2').disabled = !ok;
+}
+
+// ===== AVAILABILITY =====
+async function loadAvailability() {
+  state.time = null;
+  document.getElementById('btnStep3').disabled = true;
+  document.getElementById('loadingSlots').style.display = 'block';
+  document.getElementById('timeGrid').innerHTML = '';
+
+  var date = document.getElementById('bookDate').value;
+  state.date = date;
+
+  try {
+    var url = SCRIPT_URL + '?action=getBookings&branch=' + encodeURIComponent(BRANCHES[state.branch].name) + '&date=' + date;
+    var res = await fetch(url);
+    var data = await res.json();
+    state.bookedSlots = data.bookedSlots || {};
+  } catch(e) {
+    console.log('availability error:', e);
+    state.bookedSlots = {};
+  }
+
+  document.getElementById('loadingSlots').style.display = 'none';
+  renderTimeSlots();
+}
+
+function renderTimeSlots() {
+  var grid = document.getElementById('timeGrid');
+  grid.innerHTML = '';
+  var now = new Date();
+  var selectedDate = document.getElementById('bookDate').value;
+  var isToday = selectedDate === now.toISOString().split('T')[0];
+  var currentHour = now.getHours();
+  var currentMin = now.getMinutes();
+  var maxTherapist = BRANCHES[state.branch].maxTherapist;
+  var needSlots = state.guests;
+
+  TIME_SLOTS.forEach(function(t) {
+    var parts = t.split(':');
+    var h = parseInt(parts[0]); var m = parseInt(parts[1]);
+    var btn = document.createElement('button');
+    btn.className = 'time-btn';
+    var booked = state.bookedSlots[t] || 0;
+    var available = maxTherapist - booked;
+    var isPast = isToday && (h < currentHour || (h === currentHour && m <= currentMin));
+
+    if (isPast || available < needSlots) {
+      btn.disabled = true;
+      btn.className = 'time-btn full';
+      btn.innerHTML = t + '<br><span style="font-size:9px;">' + (isPast ? 'ผ่านแล้ว' : 'เต็ม') + '</span>';
+    } else {
+      btn.innerHTML = t + '<br><span class="time-available">ว่าง ' + available + '</span>';
+      btn.onclick = function(){ selectTime(t, btn); };
+    }
+    grid.appendChild(btn);
+  });
+}
+
+function selectTime(t, btn) {
+  state.time = t;
+  document.querySelectorAll('.time-btn').forEach(function(el){ el.classList.remove('selected'); });
+  btn.classList.add('selected');
+  document.getElementById('btnStep3').disabled = false;
+}
+
+// ===== SUMMARY =====
+function renderSummary() {
+  var d = new Date(state.date + 'T00:00:00');
+  var days = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  var months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  var dateStr = 'วัน' + days[d.getDay()] + 'ที่ ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + (d.getFullYear()+543);
+
+  function endTime(start, dur) {
+    var p = start.split(':'); var h = parseInt(p[0]); var m = parseInt(p[1]);
+    var total = h*60 + m + parseInt(dur);
+    return String(Math.floor(total/60)).padStart(2,'0') + ':' + String(total%60).padStart(2,'0');
+  }
+
+  var total = state.persons[0].price;
+  var p1 = state.persons[0];
+  var html = '<div class="summary-row"><span class="summary-label">สาขา</span><span class="summary-value">' + BRANCHES[state.branch].name + '</span></div>';
+  html += '<div class="summary-row"><span class="summary-label">วันที่</span><span class="summary-value">' + dateStr + '</span></div>';
+  html += '<div class="summary-row"><span class="summary-label">เวลา</span><span class="summary-value">' + state.time + ' – ' + endTime(state.time, p1.duration) + ' น.</span></div>';
+  html += '<div style="height:8px;"></div>';
+  html += '<div style="font-size:11px;font-weight:700;color:var(--text-light);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">👤 คนที่ 1</div>';
+  html += '<div class="summary-row"><span class="summary-label">บริการ</span><span class="summary-value">' + p1.service.name + '</span></div>';
+  html += '<div class="summary-row"><span class="summary-label">ระยะเวลา</span><span class="summary-value">' + p1.duration + ' นาที</span></div>';
+  html += '<div class="summary-row"><span class="summary-label">ราคา</span><span class="summary-value">' + p1.price.toLocaleString() + ' ฿</span></div>';
+
+  if (state.guests === 2) {
+    var p2 = state.persons[1];
+    total += p2.price;
+    html += '<div style="height:8px;"></div>';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text-light);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">👤 คนที่ 2</div>';
+    html += '<div class="summary-row"><span class="summary-label">บริการ</span><span class="summary-value">' + p2.service.name + '</span></div>';
+    html += '<div class="summary-row"><span class="summary-label">ระยะเวลา</span><span class="summary-value">' + p2.duration + ' นาที</span></div>';
+    html += '<div class="summary-row"><span class="summary-label">ราคา</span><span class="summary-value">' + p2.price.toLocaleString() + ' ฿</span></div>';
+  }
+
+  html += '<div style="height:4px;"></div>';
+  html += '<div class="summary-row"><span class="summary-label" style="font-weight:700;color:var(--text);">รวมทั้งหมด</span><span class="summary-total">' + total.toLocaleString() + ' บาท</span></div>';
+  document.getElementById('summaryCard').innerHTML = html;
+}
+
+// ===== CONFIRM =====
+function confirmBooking() {
+  var btn = document.getElementById('btnConfirm');
+  btn.disabled = true;
+  btn.textContent = 'กำลังบันทึก...';
+
+  function endTime(start, dur) {
+    var p = start.split(':'); var h = parseInt(p[0]); var m = parseInt(p[1]);
+    var total = h*60 + m + parseInt(dur);
+    return String(Math.floor(total/60)).padStart(2,'0') + ':' + String(total%60).padStart(2,'0');
+  }
+
+  var p1 = state.persons[0];
+  var booking = {
+    lineUserId: state.userId,
+    displayName: state.displayName,
+    branch: BRANCHES[state.branch].name,
+    guests: state.guests,
+    date: state.date,
+    time: state.time,
+    endTime: endTime(state.time, p1.duration),
+    person1Service: p1.service.name,
+    person1Duration: p1.duration + ' นาที',
+    person1Price: p1.price,
+    person2Service: state.guests===2 ? state.persons[1].service.name : '',
+    person2Duration: state.guests===2 ? state.persons[1].duration + ' นาที' : '',
+    person2Price: state.guests===2 ? state.persons[1].price : 0,
+    totalPrice: p1.price + (state.guests===2 ? state.persons[1].price : 0)
+  };
+
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(booking)
+  }).catch(function(e){ console.log('fetch:', e); });
+
+  // LINE message
+  try {
+    if (liff.isInClient()) {
+      var msg = '🌿 ยืนยันการจอง ' + BRANCHES[state.branch].name + '\n';
+      msg += '━━━━━━━━━━━━\n';
+      msg += '📅 ' + state.date + ' เวลา ' + state.time + '–' + endTime(state.time, p1.duration) + ' น.\n';
+      msg += '👤 คนที่ 1: ' + p1.service.name + ' (' + p1.duration + ' นาที)\n';
+      if (state.guests === 2) {
+        var p2 = state.persons[1];
+        msg += '👤 คนที่ 2: ' + p2.service.name + ' (' + p2.duration + ' นาที)\n';
+      }
+      msg += '💰 รวม ' + booking.totalPrice.toLocaleString() + ' บาท\n';
+      msg += '━━━━━━━━━━━━\n';
+      msg += '💳 ชำระเงินหน้างาน\n📞 083-845-4004';
+      liff.sendMessages([{ type:'text', text:msg }]);
+    }
+  } catch(e) { console.log('msg:', e); }
+
+  // confirm card
+  document.getElementById('confirmCard').innerHTML =
+    '<div class="summary-row"><span class="summary-label">สาขา</span><span class="summary-value">' + BRANCHES[state.branch].name + '</span></div>' +
+    '<div class="summary-row"><span class="summary-label">วันเวลา</span><span class="summary-value">' + state.date + ' ' + state.time + ' น.</span></div>' +
+    '<div class="summary-row"><span class="summary-label">จำนวน</span><span class="summary-value">' + state.guests + ' คน</span></div>' +
+    '<div class="summary-row"><span class="summary-label">รวม</span><span class="summary-value summary-total">' + booking.totalPrice.toLocaleString() + ' บาท</span></div>';
+
+  goStep(5);
+}
+
+// ===== NAVIGATION =====
+function goStep(n) {
+  if (n === 3) {
+    state.date = document.getElementById('bookDate').value;
+    loadAvailability();
+  }
+  if (n === 4) { renderSummary(); }
+  showStep('step' + n);
+  updateStepBar(n - 1);
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function showStep(id) {
+  document.querySelectorAll('.step').forEach(function(el){ el.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+function updateStepBar(active) {
+  for (var i = 1; i <= 4; i++) {
+    var circle = document.getElementById('sc' + i);
+    var label = document.getElementById('sl' + i);
+    circle.classList.remove('active', 'done');
+    label.classList.remove('active');
+    if (i < active) { circle.classList.add('done'); circle.textContent = '✓'; }
+    else if (i === active) { circle.classList.add('active'); circle.textContent = i; label.classList.add('active'); }
+    else { circle.textContent = i; }
+    if (i < 4) {
+      var line = document.getElementById('sline' + i);
+      line.classList.toggle('done', i < active);
+    }
+  }
+}
+</script>
+</body>
+</html>
