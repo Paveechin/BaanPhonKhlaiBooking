@@ -636,15 +636,12 @@ async function confirmBooking() {
     totalPrice: p1.price + (state.guests===2 ? state.persons[1].price : 0)
   };
 
-  try {
-    var res = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(booking)
-    });
-    var result = await res.json();
-    if (!result.success) console.error('Sheet error:', result.error);
-  } catch(e) { console.log('fetch:', e); }
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(booking)
+  });
 
   // LINE message
   try {
