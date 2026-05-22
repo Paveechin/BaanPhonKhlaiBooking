@@ -429,7 +429,13 @@ function selectBranch(branch) {
 
   // guest limit
   if (branch === 'baan') {
+    document.getElementById('guest2btn').disabled = true;
+    document.getElementById('guest2btn').style.opacity = '0.4';
+    document.getElementById('guest2btn').title = 'บ้านผ่อนคลายมีหมอนวด 1 คน';
+    setGuests(1);
+  } else {
     document.getElementById('guest2btn').disabled = false;
+    document.getElementById('guest2btn').style.opacity = '1';
   }
 
   goStep(2);
@@ -636,12 +642,13 @@ async function confirmBooking() {
     totalPrice: p1.price + (state.guests===2 ? state.persons[1].price : 0)
   };
 
-  // ส่งข้อมูลผ่าน GET params (แก้ปัญหา CORS กับ Apps Script)
-  var params = '?action=save';
-  Object.keys(booking).forEach(function(k) {
-    params += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(booking[k]);
+  // ส่งข้อมูลผ่าน POST (text/plain ผ่าน CORS ได้)
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(booking)
   });
-  new Image().src = SCRIPT_URL + params;
 
   // LINE message
   try {
